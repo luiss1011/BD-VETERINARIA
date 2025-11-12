@@ -108,6 +108,9 @@ app.get('/api/data-by-apikey', apiAuth, (req, res) => {
 // Rutas de publicaciones (protegidas donde sea necesario)
 app.use('/api/posts', postRoutes);
 
+// Ruta de citas
+app.use("/api/appointments", citaRoutes);
+
 // Rutas de comentarios (protegidas donde sea necesario)
 app.use('/api/comments', commentRoutes);
 
