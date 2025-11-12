@@ -86,22 +86,22 @@ exports.login = async (req, res) => {
   
 
   try {
-    // ✅ Buscar por email (asegúrate de que el campo se llama `email` en tu modelo 👍)
+    // Buscar por email (asegúrate de que el campo se llama `email` en tu modelo)
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' }); // 👈 evitar "usuario no encontrado" por seguridad
+      return res.status(401).json({ message: 'Credenciales inválidas' }); //  evitar "usuario no encontrado" por seguridad
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Credenciales inválidas' }); // 👈 mismo mensaje para evitar enumeración de usuarios
+      return res.status(401).json({ message: 'Credenciales inválidas' }); // mismo mensaje para evitar enumeración de usuarios
     }
 
-    // 👇 Asumiendo que tienes una función `generateToken` que ya funciona
+    // Asumiendo que tienes una función `generateToken` que ya funciona
     const token = generateToken(user._id, user.role);
 
-    // ✅ Respuesta limpia y segura (sin exponer password, etc.)
+    // Respuesta limpia y segura (sin exponer password, etc.)
     res.status(200).json({
       message: 'Inicio de sesión exitoso',
       token,
