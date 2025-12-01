@@ -1,36 +1,67 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validateName, validatePhone, validatePassword, validateEmail } = require("../utils/validation");
 
-// Función para generar JWT
+// Generar token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 };
 
-// @desc    Registrar nuevo usuario
-// @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res) => {
   const { username, password, email, fullName, phone } = req.body;
 
   // Validaciones básicas
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Por favor, ingrese un nombre de usuario y una contraseña.' });
+  if (!username || !password || !email) {
+    return res.status(400).json({ message: 'Username, email y contraseña son obligatorios.' });
+  }
+
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: "Email inválido" });
+  }
+
+  if (!validateName(fullName)) {
+    return res.status(400).json({
+      error: "Nombre inválido: solo letras y espacios, sin caracteres especiales."
+    });
+  }
+
+  if (!validatePhone(phone)) {
+    return res.status(400).json({
+      error: "Número de teléfono inválido: debe tener 10 dígitos."
+    });
+  }
+
+  if (!validatePassword(password)) {
+    return res.status(400).json({
+      error: "Contraseña insegura: mínimo 8 caracteres, incluye mayúscula, minúscula, número y símbolo."
+    });
   }
 
   try {
+    // Validar usuario duplicado
     let user = await User.findOne({ username });
     if (user) {
       return res.status(400).json({ message: 'El nombre de usuario ya existe.' });
     }
 
+    let userEmail = await User.findOne({ email });
+    if (userEmail) {
+      return res.status(400).json({ message: 'El email ya está registrado.' });
+    }
+
+    // Encriptar contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Crear usuario
     user = await User.create({
       username,
       password,
       email,
       fullName,
       phone,
-      role: 'user' // Todos los usuarios registrados son 'user' por defecto
+      role: 'user'
     });
 
     const token = generateToken(user._id, user.role);
@@ -44,35 +75,13 @@ exports.register = async (req, res) => {
       },
       token
     });
+
   } catch (error) {
     console.error(error);
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'El nombre de usuario ya está en uso.' });
-    }
     res.status(500).json({ message: 'Error en el servidor al registrar usuario.' });
   }
 };
 
-// @desc    Iniciar sesión de usuario
-// @route   POST /api/auth/login
-// // @access  Public
-// exports.login = async (req, res) => {
-//   const { username, password } = req.body;
-//   const user = await User.findOne({ username });
-//   if (!user) {
-//     return res.status(401).json({ message: 'Usuario no encontrado' });
-//   }
-//   const isMatch = await user.comparePassword(password);
-//   if (!isMatch) return res.status(401).json({ message: 'Contraseña incorrecta' });
-
-//   const token = generateToken(user._id, user.role);
-
-//   res.status(200).json({
-//     message: 'Login exitoso',
-//     token,
-//     user: { id: user._id, username: user.username, role: user.role }
-//   });
-// };
 
 
 // controllers/authController.js

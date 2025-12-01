@@ -87,3 +87,58 @@ exports.createAppointment = async (req, res) => {
     res.status(500).json({ message: 'Error al agendar la cita' });
   }
 };
+
+
+
+// ENDPOIN PARA TRAER LAS CITAS
+// @desc    Obtener todas las citas (solo admin)
+// @route   GET /api/appointments
+// @access  Admin
+exports.getAllAppointments = async (req, res) => {
+  try {
+    const appointments = await Appointment.find()
+      .populate('client', 'fullName email role') // ajusta campos según tu modelo User
+      .sort({ createdAt: -1 }); // más recientes primero
+
+    res.status(200).json({
+      total: appointments.length,
+      appointments
+    });
+
+  } catch (error) {
+    console.error('Error al obtener citas:', error);
+    res.status(500).json({ message: 'Error al obtener la lista de citas' });
+  }
+};
+
+
+// CONTROLADOR PARA APROBAR/CANCELAR LAS CITAS
+exports.updateAppointmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['pendiente', 'confirmada', 'cancelada'].includes(status)) {
+      return res.status(400).json({ message: "Estado inválido" });
+    }
+
+    const appointment = await Appointment.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    ).populate('client', 'fullName email phone');
+
+    if (!appointment) {
+      return res.status(404).json({ message: "Cita no encontrada" });
+    }
+
+    res.status(200).json({
+      message: "Estado actualizado",
+      appointment
+    });
+
+  } catch (error) {
+    console.error("Error al actualizar cita:", error);
+    res.status(500).json({ message: "Error al actualizar estado" });
+  }
+};

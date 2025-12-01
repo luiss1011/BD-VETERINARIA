@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const citaRoutes = require("./routes/CitasRouter");
 const authRoutes = require('./routes/authRoutes');
 // console.log('authRoutes:', typeof authRoutes); // Debería ser 'function' (router es una función)
 
@@ -10,6 +11,8 @@ const { protect, authorize } = require('./middleware/authMiddleware');
 
 const apiAuth = require('./middleware/apiAuthMiddleware'); // Para la autenticación de API Key
 // console.log('apiAuth:', typeof apiAuth);   // Debería ser 'function'
+
+
 
 const cors = require('cors'); // Importa cors
 
@@ -51,7 +54,7 @@ mongoose.connect(MONGODB_URI)
  .then(async () => {
     console.log('Conectado a MongoDB');
     console.log('Servidor ejecutándose en http://localhost:' + PORT);
-      // await createDefaultAdmin(); // 🔹 crea el admin si no existe
+   // await createDefaultAdmin(); // 🔹 crea el admin si no existe
   })
   .catch(err => console.error('Error al conectar a MongoDB:', err));
 
@@ -73,6 +76,9 @@ app.get('/api/admin-only', protect, authorize(['admin']), (req, res) => {
     user: req.user
   });
 });
+
+app.use('/api/mascotas', require('./routes/mascotasRoutes'));
+
 
 // Ejemplo de una ruta protegida con API Key
 app.get('/api/data-by-apikey', apiAuth, (req, res) => {
@@ -151,16 +157,14 @@ app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
 
 // CODIGO PARA CREAR ADMIN POR DEFECTO SI NO EXISTE
 // const User = require('./models/User');
-// const bcrypt = require('bcryptjs');
 
 // const createDefaultAdmin = async () => {
 //   try {
 //     const existingAdmin = await User.findOne({ role: 'admin' });
 //     if (!existingAdmin) {
-//       const hashedPassword = await bcrypt.hash('admin123', 10);
 //       await User.create({
 //         username: 'admin',
-//         password: hashedPassword,
+//         password: 'admin123',  // 🔹 SIN HASH (el modelo lo hará)
 //         email: 'admin@admin.com',
 //         fullName: 'Administrador',
 //         role: 'admin'
@@ -170,7 +174,7 @@ app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
 //       console.log('⚙️ Admin ya existe, no se crea otro.');
 //     }
 //   } catch (err) {
-//     console.error('Error al crear admin por defecto:', err);
+//     console.error('❌ Error al crear admin por defecto:', err);
 //   }
 // };
 
