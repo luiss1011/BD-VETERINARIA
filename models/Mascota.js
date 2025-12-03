@@ -15,7 +15,7 @@ const MascotaSchema = new mongoose.Schema({
   // 🔗 Relación con usuario (usando JWT)
   usuarioId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Usuario',
+    ref: 'User',
     required: true
   }
 }, { timestamps: true });

@@ -54,7 +54,7 @@ mongoose.connect(MONGODB_URI)
  .then(async () => {
     console.log('Conectado a MongoDB');
     console.log('Servidor ejecutándose en http://localhost:' + PORT);
-   // await createDefaultAdmin(); // 🔹 crea el admin si no existe
+  //  await createDefaultAdmin(); // 🔹 crea el admin si no existe
   })
   .catch(err => console.error('Error al conectar a MongoDB:', err));
 

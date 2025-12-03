@@ -3,20 +3,33 @@ const mongoose = require('mongoose');
 const appointmentSchema = new mongoose.Schema({
   client: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'User',   // 🟢 tu modelo es "Usuario"
+    required: true
+  },
+  mascota: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Mascota',   // 🟢 referencia a mascota
     required: true
   },
   date: {
     type: Date,
-    required: [true, 'La fecha de la cita es obligatoria']
+    required: true
   },
   service: {
     type: String,
-    required: [true, 'El servicio es obligatorio']
+    required: true
+  },
+  motivo: {
+    type: String,
+    required: true
   },
   notes: {
     type: String,
     default: ''
+  },
+  veterinario: {
+    type: String,
+    default: ""
   },
   status: {
     type: String,

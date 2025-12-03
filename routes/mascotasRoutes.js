@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Mascota = require('../models/Mascota');
-const { protect } = require('../middleware/authMiddleware'); 
+const { protect } = require('../middleware/authMiddleware');
+const  mascotasController = require('../controllers/mascotasController')
 
 router.post('/crear', protect, async (req, res) => {
   try {
@@ -30,6 +31,8 @@ router.get('/mis-mascotas', protect, async (req, res) => {
     res.status(500).json({ message: "Error al obtener mascotas" });
   }
 });
+
+router.delete("/eliminar/:id", protect, mascotasController.eliminarMascota);
 
 
 module.exports = router;

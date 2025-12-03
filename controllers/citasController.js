@@ -1,144 +1,53 @@
-// const Citas = require('../models/Citas');
-// REQUIRIMOS A LOS USUARIOS PARA ASOCIAR CADA CITA A UN USUARIO
-// const User = require('../models/User');
-
-
-// CREACION DEL CONTROLADOR
 const Appointment = require('../models/Citas');
+const Mascota = require('../models/Mascota');
 const User = require('../models/User');
 
-// @desc    Crear una nueva cita
-// @route   POST /api/appointments
-// @access  Public
-// exports.createAppointment = async (req, res) => {
-//   try {
-//     const { clientId, date, service, notes } = req.body;
-
-//     // Verificar que el cliente exista
-//     const client = await User.findById(clientId);
-//     if (!client) {
-//       return res.status(404).json({ message: 'Cliente no encontrado' });
-//     }
-
-//     // Crear la cita
-//     const appointment = new Appointment({
-//       client: client._id,
-//       date,
-//       service,
-//       notes
-//     });
-
-//     await appointment.save();
-
-//     res.status(201).json({ message: 'Cita agendada correctamente', appointment });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: 'Error al agendar la cita' });
-//   }
-// };
-// TERMINA FUNCION FUNCIONAL ANTES
-
-
-// INICIA NUEVO CONTROLADOR
-exports.createAppointment = async (req, res) => {
-  // ✅ Si usas JWT, el userId debería venir del token (mejor que del body)
-  // Pero como estás pasando clientId en el body, lo dejamos por ahora (¡pero cuidado con spoofing!)
-
+exports.crearCita = async (req, res) => {
   try {
-    const { date, service, notes } = req.body;
+    const userId = req.user.id; // 🟢 viene del token
+    const {
+      mascotaId,
+      fecha,
+      hora,
+      tipoServicio,
+      motivo,
+      notas,
+      veterinario
+    } = req.body;
 
-    // ✅ Obtener userId del token (recomendado) — ver más abajo cómo hacerlo
-    // const userId = req.user.id;  ← ideal
+    // ❌ Validaciones básicas
+    if (!mascotaId) return res.status(400).json({ message: "Debe seleccionar una mascota" });
+    if (!fecha || !hora) return res.status(400).json({ message: "Debe seleccionar fecha y hora" });
+    if (!tipoServicio) return res.status(400).json({ message: "Debe seleccionar un servicio" });
+    if (!motivo) return res.status(400).json({ message: "Debe escribir un motivo" });
 
-    // ⚠️ Si insistes en recibir clientId del frontend, al menos:
-    const clientId = req.body.clientId || req.user?.id; // fallback
+    // 🔎 Verificar mascota pertenece al usuario
+    const mascota = await Mascota.findOne({ _id: mascotaId, usuarioId: userId });
 
-    if (!clientId) {
-      return res.status(400).json({ message: 'Usuario no autenticado' });
+    if (!mascota) {
+      return res.status(404).json({ message: "Mascota no encontrada o no pertenece al usuario" });
     }
 
-    const client = await User.findById(clientId);
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
-    }
+    // 📆 Unir fecha y hora en un solo Date
+    const fechaCompleta = new Date(`${fecha}T${hora}:00`);
 
-    const appointment = new Appointment({
-      client: client._id,
-      date: new Date(date), // asegurar que sea Date
-      service,
-      notes: notes || '',
-      // status: 'pendiente' ← por defecto en el schema
+    const nuevaCita = await Appointment.create({
+      client: userId,
+      mascota: mascotaId,
+      date: fechaCompleta,
+      service: tipoServicio,
+      motivo,
+      notes: notas || "",
+      veterinario: veterinario || "",
     });
-
-    await appointment.save();
 
     res.status(201).json({
-      message: 'Cita agendada correctamente',
-      appointment: {
-        id: appointment._id,
-        date: appointment.date,
-        service: appointment.service,
-        status: appointment.status
-      }
+      message: "Cita creada correctamente",
+      cita: nuevaCita
     });
 
   } catch (error) {
-    console.error('Error al crear cita:', error);
-    res.status(500).json({ message: 'Error al agendar la cita' });
-  }
-};
-
-
-
-// ENDPOIN PARA TRAER LAS CITAS
-// @desc    Obtener todas las citas (solo admin)
-// @route   GET /api/appointments
-// @access  Admin
-exports.getAllAppointments = async (req, res) => {
-  try {
-    const appointments = await Appointment.find()
-      .populate('client', 'fullName email role') // ajusta campos según tu modelo User
-      .sort({ createdAt: -1 }); // más recientes primero
-
-    res.status(200).json({
-      total: appointments.length,
-      appointments
-    });
-
-  } catch (error) {
-    console.error('Error al obtener citas:', error);
-    res.status(500).json({ message: 'Error al obtener la lista de citas' });
-  }
-};
-
-
-// CONTROLADOR PARA APROBAR/CANCELAR LAS CITAS
-exports.updateAppointmentStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!['pendiente', 'confirmada', 'cancelada'].includes(status)) {
-      return res.status(400).json({ message: "Estado inválido" });
-    }
-
-    const appointment = await Appointment.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    ).populate('client', 'fullName email phone');
-
-    if (!appointment) {
-      return res.status(404).json({ message: "Cita no encontrada" });
-    }
-
-    res.status(200).json({
-      message: "Estado actualizado",
-      appointment
-    });
-
-  } catch (error) {
-    console.error("Error al actualizar cita:", error);
-    res.status(500).json({ message: "Error al actualizar estado" });
+    console.error("Error al crear cita:", error);
+    res.status(500).json({ message: "Error al crear la cita" });
   }
 };
