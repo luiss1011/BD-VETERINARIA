@@ -54,7 +54,7 @@ mongoose.connect(MONGODB_URI)
  .then(async () => {
     console.log('Conectado a MongoDB');
     console.log('Servidor ejecutándose en http://localhost:' + PORT);
-  //  await createDefaultAdmin(); // 🔹 crea el admin si no existe
+    await createDefaultAdmin(); // 🔹 crea el admin si no existe
   })
   .catch(err => console.error('Error al conectar a MongoDB:', err));
 
@@ -156,27 +156,27 @@ app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
 
 
 // CODIGO PARA CREAR ADMIN POR DEFECTO SI NO EXISTE
-// const User = require('./models/User');
+const User = require('./models/User');
 
-// const createDefaultAdmin = async () => {
-//   try {
-//     const existingAdmin = await User.findOne({ role: 'admin' });
-//     if (!existingAdmin) {
-//       await User.create({
-//         username: 'admin',
-//         password: 'admin123',  // 🔹 SIN HASH (el modelo lo hará)
-//         email: 'admin@admin.com',
-//         fullName: 'Administrador',
-//         role: 'admin'
-//       });
-//       console.log('✅ Admin por defecto creado: usuario="admin", contraseña="admin123"');
-//     } else {
-//       console.log('⚙️ Admin ya existe, no se crea otro.');
-//     }
-//   } catch (err) {
-//     console.error('❌ Error al crear admin por defecto:', err);
-//   }
-// };
+const createDefaultAdmin = async () => {
+  try {
+    const existingAdmin = await User.findOne({ role: 'admin' });
+    if (!existingAdmin) {
+      await User.create({
+        username: 'admin',
+        password: 'admin123',  // 🔹 SIN HASH (el modelo lo hará)
+        email: 'oficialveterinaria5@admin.com',
+        fullName: 'Administrador',
+        role: 'admin'
+      });
+      console.log('✅ Admin por defecto creado: usuario="admin", contraseña="admin123"');
+    } else {
+      console.log('⚙️ Admin ya existe, no se crea otro.');
+    }
+  } catch (err) {
+    console.error('❌ Error al crear admin por defecto:', err);
+  }
+};
 
 
 // una forma de subir a la nube el servicio de la api

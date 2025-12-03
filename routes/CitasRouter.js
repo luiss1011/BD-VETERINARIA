@@ -3,8 +3,9 @@ const router = express.Router();
 const { protect } = require("../middleware/authMiddleware");
 const citasController = require("../controllers/citasController");
 const { obtenerCitasUsuario } = require("../controllers/obtenerCitasUsuario");
-const Usuario = require('../models/User');
+const User = require('../models/User');
 const Appointment = require("../models/Citas");
+const transporter = require("../config/mailer");
 
 
 router.post("/crear", protect, citasController.crearCita);
@@ -28,43 +29,125 @@ router.get('/admin', async (req, res) => {
 
 
 // Aceptar cita
+// router.put('/:id/accept', protect, async (req, res) => {
+//   try {
+//     const appointment = await Appointment.findByIdAndUpdate(
+//       req.params.id,
+//       { status: "confirmada" },
+//       { new: true }
+//     );
+
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Cita no encontrada" });
+//     }
+
+//     res.json({ message: "Cita aceptada", appointment });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Error al aceptar cita", error });
+//   }
+// });
+
+// // Rechazar cita
+// router.put('/:id/reject', protect, async (req, res) => {
+//   try {
+//     const appointment = await Appointment.findByIdAndUpdate(
+//       req.params.id,
+//       { status: "cancelada" },
+//       { new: true }
+//     );
+
+//     if (!appointment) {
+//       return res.status(404).json({ message: "Cita no encontrada" });
+//     }
+
+//     res.json({ message: "Cita rechazada", appointment });
+
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: "Error al rechazar cita", error });
+//   }
+// });
+
 router.put('/:id/accept', protect, async (req, res) => {
   try {
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
       { status: "confirmada" },
       { new: true }
-    );
+    )
+    .populate("client", "fullName email")
+    .populate("mascota", "nombreMascota");
 
     if (!appointment) {
       return res.status(404).json({ message: "Cita no encontrada" });
     }
 
-    res.json({ message: "Cita aceptada", appointment });
+    // ✅ ENVÍO DE EMAIL
+    await transporter.sendMail({
+      from: `"Veterinaria Patitas" <${process.env.EMAIL_USER}>`,
+      to: appointment.client.email,
+      subject: "✅ Tu cita ha sido confirmada",
+      html: `
+        <h2>Hola ${appointment.client.fullName}</h2>
+        <p>Tu cita para <strong>${appointment.mascota.nombreMascota}</strong> ha sido <b>CONFIRMADA</b>.</p>
+        <p><b>Fecha:</b> ${new Date(appointment.date).toLocaleString()}</p>
+        <p><b>Servicio:</b> ${appointment.service}</p>
+        <p><b>Motivo:</b> ${appointment.motivo}</p>
+        <br>
+        <p>Gracias por confiar en <b>Veterinaria Patitas</b> 🐾</p>
+      `
+    });
+
+    res.json({ 
+      message: "Cita aceptada y correo enviado",
+      appointment 
+    });
 
   } catch (error) {
-    console.error(error);
+    console.error("Error al aceptar cita:", error);
     res.status(500).json({ message: "Error al aceptar cita", error });
   }
 });
 
-// Rechazar cita
 router.put('/:id/reject', protect, async (req, res) => {
   try {
     const appointment = await Appointment.findByIdAndUpdate(
       req.params.id,
       { status: "cancelada" },
       { new: true }
-    );
+    )
+    .populate("client", "fullName email")
+    .populate("mascota", "nombreMascota");
 
     if (!appointment) {
       return res.status(404).json({ message: "Cita no encontrada" });
     }
 
-    res.json({ message: "Cita rechazada", appointment });
+    // ✅ ENVÍO DE EMAIL
+    await transporter.sendMail({
+      from: `"Veterinaria Patitas" <${process.env.EMAIL_USER}>`,
+      to: appointment.client.email,
+      subject: "❌ Tu cita ha sido cancelada",
+      html: `
+        <h2>Hola ${appointment.client.fullName}</h2>
+        <p>Lamentamos informarte que tu cita para 
+        <strong>${appointment.mascota.nombreMascota}</strong> ha sido <b>CANCELADA</b>.</p>
+        <p><b>Fecha:</b> ${new Date(appointment.date).toLocaleString()}</p>
+        <p><b>Servicio:</b> ${appointment.service}</p>
+        <br>
+        <p>Puedes agendar una nueva cita cuando lo desees 🐾</p>
+      `
+    });
+
+    res.json({ 
+      message: "Cita cancelada y correo enviado",
+      appointment 
+    });
 
   } catch (error) {
-    console.error(error);
+    console.error("Error al rechazar cita:", error);
     res.status(500).json({ message: "Error al rechazar cita", error });
   }
 });
