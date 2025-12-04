@@ -1,6 +1,7 @@
 const Appointment = require('../models/Citas');
 const Mascota = require('../models/Mascota');
 const User = require('../models/User');
+const transporter = require("../config/mailer");
 
 exports.crearCita = async (req, res) => {
   try {
@@ -39,6 +40,28 @@ exports.crearCita = async (req, res) => {
       motivo,
       notes: notas || "",
       veterinario: veterinario || "",
+      status: "pendiente"
+    });
+
+    // 🔹 OBTENER DATOS DEL USUARIO
+    const usuario = await User.findById(userId);
+
+    // ✅ ENVÍO DE CORREO AL ADMIN
+    await transporter.sendMail({
+      from: `"Veterinaria Patitas" <${process.env.EMAIL_USER}>`,
+      to: process.env.ADMIN_EMAIL,
+      subject: "📩 Nueva cita registrada",
+      html: `
+        <h2>Nueva cita registrada</h2>
+        <p><b>Cliente:</b> ${usuario.fullName}</p>
+        <p><b>Email:</b> ${usuario.email}</p>
+        <p><b>Mascota:</b> ${mascota.nombreMascota}</p>
+        <p><b>Fecha:</b> ${fechaCompleta.toLocaleString()}</p>
+        <p><b>Servicio:</b> ${tipoServicio}</p>
+        <p><b>Motivo:</b> ${motivo}</p>
+        <br>
+        <p>Ingresa al panel de administración para gestionarla 🐾</p>
+      `
     });
 
     res.status(201).json({

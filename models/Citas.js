@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const appointmentSchema = new mongoose.Schema({
   client: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',   // 🟢 tu modelo es "Usuario"
+    ref: 'User',
     required: true
   },
   mascota: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Mascota',   // 🟢 referencia a mascota
+    ref: 'Mascota',
     required: true
   },
   date: {
@@ -31,9 +31,20 @@ const appointmentSchema = new mongoose.Schema({
     type: String,
     default: ""
   },
+
+  // ✅ NUEVOS CAMPOS CLÍNICOS
+  diagnostico: {
+    type: String,
+    default: ""
+  },
+  observaciones: {
+    type: String,
+    default: ""
+  },
+
   status: {
     type: String,
-    enum: ['pendiente', 'confirmada', 'cancelada'],
+    enum: ['pendiente', 'confirmada', 'cancelada', 'finalizada'],
     default: 'pendiente'
   }
 }, {
