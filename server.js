@@ -25,6 +25,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+require("./utils/cronRecordatorios");
+
+require("./utils/recordatoriosJob");
+
 
 
 
@@ -35,14 +39,6 @@ app.use(cors({
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 }));
 
-// Si quieres ser más específico en producción:
-/*
-app.use(cors({
-  origin: 'http://localhost:8000', // Ejemplo para Cordova con `cordova serve`
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key']
-}));
-*/
 
 // Middleware para parsear JSON en las solicitudes
 app.use(express.json());
@@ -79,6 +75,9 @@ app.get('/api/admin-only', protect, authorize(['admin']), (req, res) => {
 
 app.use('/api/mascotas', require('./routes/mascotasRoutes'));
 
+app.use("/api/recordatorios", require("./routes/recordatorioRoutes"));
+
+app.use("/api/users", require("./routes/userRoutes"));
 
 // Ejemplo de una ruta protegida con API Key
 app.get('/api/data-by-apikey', apiAuth, (req, res) => {
