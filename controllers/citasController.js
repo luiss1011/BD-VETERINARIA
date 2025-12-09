@@ -5,7 +5,7 @@ const transporter = require("../config/mailer");
 
 exports.crearCita = async (req, res) => {
   try {
-    const userId = req.user.id; // 🟢 viene del token
+    const userId = req.user.id; 
     const {
       mascotaId,
       fecha,
