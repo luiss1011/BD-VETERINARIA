@@ -2,31 +2,42 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Obtener el token del encabezado
-      token = req.headers.authorization.split(' ')[1];
-
-      // Verificar el token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // Adjuntar el usuario a la solicitud (sin la contraseña)
-      req.user = await User.findById(decoded.id).select('-password');
-      req.userRole = decoded.role; // También el rol
-
-      next(); // Continuar con la siguiente función de middleware/ruta
-    } catch (error) {
-      console.error(error);
-      res.status(401).json({ message: 'No autorizado, token fallido o expirado.' });
-    }
+  //  1. Validar existencia y formato del header
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'No autorizado, token no válido.' });
   }
 
-  if (!token) {
-    res.status(401).json({ message: 'No autorizado, no hay token.' });
+  const token = authHeader.split(' ')[1];
+
+  //  2. Validar que el token no venga vacío
+  if (!token || token === 'null' || token === 'undefined') {
+    return res.status(401).json({ message: 'No autorizado, token vacío.' });
+  }
+
+  try {
+    // 3. Verificar token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // 4. Adjuntar usuario (sin password)
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return res.status(401).json({ message: 'Usuario no existe.' });
+    }
+
+    req.user = user;
+    req.userRole = decoded.role;
+
+    next();
+
+  } catch (error) {
+    console.error('Error JWT:', error.message);
+    return res.status(401).json({ message: 'Token inválido o expirado.' });
   }
 };
+
 
 // Middleware de autorización basado en roles
 const authorize = (roles = []) => {
